@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Rudi's Lotto Wetterkarte</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0b1020;
+      --card: #171e33;
+      --line: rgba(255,255,255,.08);
+      --text: #eef2ff;
+      --muted: #9aa6c4;
+      --gold: #e8c36a;
+      --mi: #7eb6ff;
+      --sa: #ffb86b;
+      --c0: #1b2338;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Instrument Sans", system-ui, sans-serif;
+      font-size: 15px;
+      background:
+        radial-gradient(900px 500px at 10% -10%, #1a2a55 0%, transparent 55%),
+        radial-gradient(700px 400px at 100% 0%, #3a1d28 0%, transparent 50%),
+        var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .wrap { max-width: 1200px; margin: 0 auto; padding: 16px 18px 64px; }
+    .stick {
+      position: sticky; top: 0; z-index: 80;
+      background: rgba(11, 16, 32, .94);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--line);
+      margin: -16px -18px 16px;
+      padding: 10px 18px 12px;
+    }
+    .stick-inner { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .stick .lab { font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--gold); margin-right: 4px; }
+    header { margin-bottom: 16px; }
+    .eyebrow { color: var(--gold); letter-spacing: .08em; text-transform: none; font-size: 15px; font-weight: 600; }
+    h1 { font-family: "Instrument Sans", system-ui, sans-serif; font-size: 22px; margin: 6px 0 8px; font-weight: 700; }
+    .lead { color: var(--muted); max-width: 720px; line-height: 1.5; margin: 0; font-size: 15px; }
+    h2, .card h2 { font-size: 16px; font-weight: 600; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    button, select {
+      background: var(--card);
+      color: var(--text);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 9px 12px;
+      font: inherit;
+      cursor: pointer;
+    }
+    button:hover, select:hover { border-color: #3a4668; }
+    button.active {
+      background: #e8c36a;
+      color: #1a1403;
+      border-color: #e8c36a;
+      font-weight: 700;
+    }
+    .seg { display: flex; background: var(--card); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+    .seg button { border: 0; border-radius: 0; }
+    .filters { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin: 0 0 14px; }
+    .legend-wrap { margin: 0 0 16px; }
+    .legend-label { color: var(--muted); font-size: 13px; margin: 0 0 8px; }
+    .legend {
+      display: flex; overflow: hidden; border-radius: 10px;
+      border: 1px solid var(--line); width: 100%; max-width: none;
+    }
+    .legend .step {
+      flex: 1; min-width: 0; text-align: center;
+      font-size: 13px; font-weight: 800; padding: 14px 2px 12px;
+    }
+    .legend.local { margin: 0 0 12px; }
+    .sz-box { margin: 12px 0 4px; }
+    .sz-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+    .sz-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .sz-cell.mine { outline: 2px solid #fff; box-shadow: 0 0 0 3px rgba(232,195,106,.55); }
+    .sz-cell {
+      width: 46px; height: 46px; flex: 0 0 46px; border-radius: 50%;
+      display: grid; place-items: center; align-content: center;
+      background: #1b2338; color: #9aa6c4; font-weight: 800; font-size: 13px;
+      border: 2px solid rgba(232,195,106,.35);
+    }
+    .sz-cell small { display: block; font-size: 8px; font-weight: 600; line-height: 1; }
+    @media (max-width: 640px) {
+      .legend .step { font-size: 11px; padding: 10px 1px 9px; }
+    }
+    .sz-gap {
+      width: 2px; align-self: stretch; min-height: 36px;
+      background: linear-gradient(180deg, transparent, rgba(232,195,106,.85), transparent);
+      margin: 0 4px 0 8px; flex: 0 0 2px;
+    }
+    .sz-draw {
+      display: grid; place-items: center;
+      line-height: 1; text-align: center; padding: 0;
+      background: #1a1403; color: #e8c36a; font-weight: 800;
+      border: 2px solid #e8c36a;
+    }
+    .top-item .ball, .top-item .sz-draw {
+      width: 46px; height: 46px; min-width: 46px; min-height: 46px; flex: 0 0 46px;
+      font-size: 16px;
+    }
+    .cell.mine, .ball.mine {
+      outline: 2px solid #fff; outline-offset: 1px;
+      box-shadow: 0 0 0 3px rgba(232,195,106,.55);
+    }
+    .ghost.mine { color: rgba(255,243,196,.55); text-shadow: 0 0 8px #e8c36a; }
+    .own-bar {
+      position: sticky; bottom: 0; z-index: 80;
+      background: rgba(11,16,32,.95);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--line);
+      margin: 24px -18px -64px;
+      padding: 6px 18px 8px;
+    }
+    .own-bar form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .own-bar #own-clear { margin-left: 10px; }
+    .own-bar .own-err { color: #fca5a5; width: 100%; text-align: center; }
+    .own-bar label { font-size: 12px; color: var(--muted); font-weight: 600; }
+    .own-bar input[type="number"] {
+      width: 52px; background: var(--card); color: var(--text);
+      border: 1px solid var(--line); border-radius: 10px; padding: 8px 6px;
+      font: inherit; text-align: center;
+    }
+    .own-bar .own-hit { font-size: 12px; color: var(--gold); }
+    .ekg-wrap { overflow-x: auto; }
+    .ekg-row { display: grid; grid-template-columns: 72px 1fr; gap: 8px; align-items: center; margin: 0 0 6px; }
+    .ekg-lab { font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 4px; }
+    .ekg-lab small { color: var(--muted); font-weight: 600; }
+    .ekg-track {
+      display: flex; align-items: flex-end; gap: 2px; height: 26px;
+      background: linear-gradient(180deg, transparent 50%, rgba(255,255,255,.04) 50%, rgba(255,255,255,.04) calc(50% + 1px), transparent calc(50% + 1px));
+    }
+    .ekg-beat { flex: 1; min-width: 3px; height: 3px; border-radius: 1px; background: #2a3550; }
+    .ekg-beat.on.mi { height: 100%; background: var(--mi); }
+    .ekg-beat.on.sa { height: 100%; background: var(--sa); }
+    .ekg-beat.on.sz { height: 100%; background: var(--gold); }
+    .grid-layout { display: grid; grid-template-columns: 1.35fr .9fr; gap: 16px; }
+    @media (max-width: 920px) { .grid-layout { grid-template-columns: 1fr; } }
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,.03), transparent 40%), var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+    }
+    .card h2 { margin: 0; font-size: 16px; font-weight: 600; }
+    .card-head {
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      margin: 0 0 12px; cursor: pointer; user-select: none;
+    }
+    .mode-hint {
+      font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+      color: var(--gold); border: 1px solid rgba(232,195,106,.35);
+      border-radius: 999px; padding: 4px 10px; white-space: nowrap;
+    }
+    .ticket:has(.cloudmap) { display: block; }
+    .cloudmap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      height: auto;
+      min-height: 0;
+      border-radius: 16px;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 18% 24%, #16324f 0%, transparent 42%),
+        radial-gradient(ellipse at 86% 78%, #1a2038 0%, transparent 40%),
+        linear-gradient(165deg, #08111d 0%, #0b1730 48%, #070d18 100%);
+    }
+    .cloudmap.mini { aspect-ratio: 1 / 1; }
+    .cloud-cells {
+      position: absolute; inset: 2%;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      grid-template-rows: repeat(7, 1fr);
+      gap: 2%;
+      filter: blur(10px) saturate(1.35);
+      pointer-events: none;
+    }
+    .cloud-cells i {
+      display: block;
+      border-radius: 42%;
+      opacity: .92;
+    }
+    .puffs {
+      position: absolute; inset: -8%;
+      filter: blur(20px) saturate(1.25);
+      pointer-events: none;
+    }
+    .puff {
+      position: absolute;
+      border-radius: 50%;
+      opacity: .5;
+    }
+    .ghosts {
+      position: absolute; inset: 0;
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      grid-template-rows: repeat(7, 1fr);
+      pointer-events: none;
+    }
+    .ghost {
+      display: grid; place-items: center;
+      font-size: clamp(14px, 3.2vw, 26px);
+      font-weight: 800;
+      color: rgba(255,255,255,.13);
+      letter-spacing: .02em;
+    }
+    .month-tile .ghost { font-size: 10px; color: rgba(255,255,255,.16); }
+    .month-tile .puffs { filter: blur(10px) saturate(1.1); }
+    .arena { display: flex; flex-direction: column; gap: 16px; }
+    .podium {
+      display: grid; grid-template-columns: 1fr 1.15fr 1fr; gap: 8px; align-items: end;
+    }
+    .pod {
+      background: #12182b; border: 1px solid var(--line); border-radius: 16px;
+      padding: 12px 8px 10px; text-align: center;
+    }
+    .pod.p1 { padding-top: 18px; border-color: rgba(239,68,68,.45); box-shadow: 0 8px 28px rgba(185,28,28,.18); }
+    .pod .orb { margin: 0 auto 8px; }
+    .pod .place { display: block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    .pod .hits { display: block; font-weight: 700; margin-top: 4px; }
+    .orbits { display: flex; flex-direction: column; gap: 8px; }
+    .orbit {
+      display: grid; grid-template-columns: 64px 1fr; gap: 10px; align-items: center;
+      background: #12182b; border-radius: 14px; padding: 8px 10px;
+    }
+    .orbit-meta { color: var(--muted); font-size: 11px; line-height: 1.3; }
+    .orbit-meta b { display: block; color: var(--text); font-size: 15px; }
+    .orbit-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .orb {
+      border-radius: 50%; display: grid; place-items: center; font-weight: 700;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.2);
+    }
+    .week .orbit { grid-template-columns: 52px 1fr; padding: 6px 8px; }
+    .month-tile .podium { display: none; }
+    .month-tile .orbit { grid-template-columns: 1fr; gap: 4px; padding: 6px; }
+    .month-tile .orbit-meta { display: flex; justify-content: space-between; font-size: 10px; }
+    .month-tile .orbit-meta b { display: inline; font-size: 11px; }
+    .bars {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(40px, 1fr));
+      gap: 8px;
+      align-items: end;
+      min-height: 180px;
+      margin-top: 8px;
+    }
+    .bar-col { display: flex; flex-direction: column; align-items: center; gap: 6px; height: 180px; justify-content: flex-end; }
+    .bar-col .bar {
+      width: 100%; max-width: 28px; border-radius: 8px 8px 3px 3px; min-height: 6px;
+    }
+    .bar-col .ball, .bar-col .sz-draw { width: 36px; height: 36px; min-width: 36px; font-size: 13px; }
+    .bar-col small { color: var(--muted); font-size: 11px; }
+    .week .rank li { grid-template-columns: 28px 40px 1fr auto; }
+    .week .rank .ball { width: 40px; height: 40px; font-size: 15px; }
+    .month-tile .rank li { grid-template-columns: 22px 28px 1fr auto; padding: 3px 8px 3px 4px; gap: 6px; }
+    .month-tile .rank .ball { width: 28px; height: 28px; font-size: 11px; }
+    .month-tile .rank .rc { font-size: 11px; }
+    .week { border: 1px solid var(--line); border-radius: 14px; padding: 11px; margin-bottom: 10px; background: #12182b; }
+    .week-head { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+    .draw-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; flex-wrap: wrap; }
+    .tag { min-width: 38px; font-size: 11px; font-weight: 700; letter-spacing: .03em; padding: 4px 8px; border-radius: 999px; text-align: center; }
+    .tag.ov { min-width: 0; }
+    .tag.mi { background: rgba(126,182,255,.15); color: var(--mi); }
+    .tag.sa { background: rgba(255,184,107,.15); color: var(--sa); }
+    .tag.ov { background: rgba(232,195,106,.12); color: var(--gold); }
+    .balls { display: flex; flex-wrap: wrap; gap: 5px; }
+    .ball, .cell, .sz-draw { display: grid; place-items: center; font-weight: 700; line-height: 1; }
+    .ball, .sz-draw {
+      width: 46px; height: 46px; min-width: 46px; min-height: 46px;
+      border-radius: 50%; aspect-ratio: 1 / 1;
+      font-size: 16px;
+      background: #22304d; color: #fff;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.18);
+      position: relative;
+      flex: 0 0 46px;
+    }
+    .sz { margin-left: auto; color: var(--muted); font-size: 12px; }
+    .sz b { color: var(--text); }
+    .ticket.hide-odd .cell.odd,
+    .ticket.hide-even .cell.even { opacity: .16; }
+    .ticket { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+    .cell {
+      aspect-ratio: 1; border-radius: 9px; font-size: 16px;
+      background: var(--c0); color: #7e8bab; border: 1px solid rgba(255,255,255,.04);
+      flex-direction: column; line-height: 1.05;
+    }
+    .cell small { display: block; font-size: 12px; font-weight: 700; opacity: .95; }
+    @media (min-width: 900px) {
+      .ball, .sz-draw, .top-item .ball, .top-item .sz-draw {
+        width: 58px; height: 58px; min-width: 58px; min-height: 58px; flex-basis: 58px; font-size: 22px;
+      }
+      .cell { font-size: 22px; }
+      .cell small { font-size: 14px; }
+      .draw-row .balls {
+        display: grid;
+        grid-template-columns: repeat(7, 58px);
+        gap: 6px;
+      }
+    }
+    .toplist { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; }
+    .toplist h3 { margin: 0 8px 0 0; font-size: 13px; font-weight: 600; color: var(--muted); width: 100%; }
+    .top-item { display: flex; align-items: center; gap: 6px; background: #12182b; border-radius: 999px; padding: 4px 10px 4px 4px; }
+    .top-item .ball, .top-item .sz-draw { width: 46px; height: 46px; min-width: 46px; min-height: 46px; font-size: 16px; }
+    .top-item b { font-size: 13px; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+    .stat { background: #12182b; border-radius: 12px; padding: 10px 12px; }
+    .stat span { display: block; color: var(--muted); font-size: 11px; }
+    .stat b { font-size: 17px; }
+    .year-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    @media (max-width: 800px) { .year-grid { grid-template-columns: repeat(2, 1fr); } }
+    .month-tile {
+      background: #12182b; border: 1px solid var(--line); border-radius: 14px;
+      padding: 10px; cursor: pointer; text-align: left; width: 100%;
+    }
+    .month-tile:hover { border-color: #e8c36a; }
+    .month-tile h3 { margin: 0 0 8px; font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; }
+    .month-tile .mini { gap: 3px; }
+    .month-tile .cell { font-size: 11px; border-radius: 4px; }
+    .month-tile .cell small { display: none; }
+    .status { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+    .fair { color: var(--muted); font-size: 12px; line-height: 1.45; margin: 10px 0 0; }
+    .star-line { margin: 10px 0 0; font-size: 14px; line-height: 1.45; }
+    #count-line { color: var(--gold); font-size: 13px; margin: 0 0 10px; }
+    footer { margin-top: 20px; color: #6d7896; font-size: 12px; text-align: center; }
+    .own-bar .own-hit { text-align: center; width: 100%; }
+    .swipe-hint { display: none; color: var(--muted); font-size: 12px; margin: 0 0 12px; }
+    @media (pointer: coarse) {
+      .swipe-hint { display: block; }
+    }
+    .hidden { display: none !important; }
+    .zoo { margin-top: 16px; }
+    .zoo-note { color: var(--muted); font-size: 13px; line-height: 1.45; margin: 0 0 12px; }
+    .zoo-grid { display: grid; gap: 10px; }
+    .habitat {
+      border-radius: 14px; padding: 10px 12px; border: 1px solid var(--line);
+    }
+    .habitat h3 { margin: 0 0 4px; font-size: 15px; }
+    .habitat p { margin: 0 0 8px; font-size: 12px; color: var(--muted); }
+    .herd { display: flex; flex-wrap: wrap; gap: 8px; }
+    .beast { text-align: center; min-width: 52px; }
+    .beast.out { opacity: .42; filter: grayscale(.55); }
+    .beast .emo { font-size: 28px; line-height: 1.1; display: block; }
+    .beast .nm { display: block; font-size: 10px; font-weight: 700; margin-top: 2px; }
+    .beast .nr { display: block; font-size: 16px; font-weight: 800; line-height: 1.15; }
+    .beast .tag2 {
+      display: inline-block; margin-top: 4px; font-size: 9px; font-weight: 700;
+      letter-spacing: .04em; text-transform: uppercase; padding: 2px 6px; border-radius: 999px;
+    }
+    .beast .tag2.ok { background: rgba(74,222,128,.18); color: #86efac; }
+    .beast .tag2.tip { background: rgba(232,195,106,.16); color: var(--gold); }
+    .forecast {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;
+    }
+    .forecast .cardlet {
+      display: flex; align-items: center; gap: 8px;
+      background: #12182b; border: 1px dashed rgba(232,195,106,.35);
+      border-radius: 12px; padding: 8px 10px; min-width: 180px; flex: 1;
+    }
+    .forecast .emo { font-size: 26px; }
+    .forecast b { display: block; font-size: 13px; }
+    .forecast small { color: var(--muted); font-size: 11px; }
+    .explain { color: var(--muted); font-size: 14px; line-height: 1.6; margin: 0 0 12px; }
+    .explain h3 { color: var(--text); font-size: 15px; margin: 16px 0 6px; }
+    .warn {
+      background: rgba(232,195,106,.1); border: 1px solid rgba(232,195,106,.3);
+      border-radius: 12px; padding: 12px 14px; color: #f3e2b0; font-size: 13px; line-height: 1.5; margin: 0 0 16px;
+    }
+    .tip-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 800px) { .tip-grid { grid-template-columns: 1fr; } }
+    .tip-draw { background: #12182b; border-radius: 14px; padding: 12px; }
+    .tip-draw h3 { margin: 0 0 10px; font-size: 15px; }
+    .tip-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .why { margin: 0; padding: 0; list-style: none; }
+    .why li { font-size: 13px; color: var(--muted); line-height: 1.45; margin: 0 0 8px; padding-left: 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="stick">
+      <div class="stick-inner">
+        <div class="seg">
+          <button id="btn-month" class="active">Monat</button>
+          <button id="btn-year">Jahr</button>
+        </div>
+        <div class="seg">
+          <button id="prev">←</button>
+          <button id="next">→</button>
+        </div>
+        <select id="year"></select>
+        <select id="month"></select>
+        <div class="seg" id="day-filter">
+          <button data-day="both" class="active">Beide</button>
+          <button data-day="Mi">Mittwoch</button>
+          <button data-day="Sa">Samstag</button>
+        </div>
+      </div>
+    </div>
+    <header>
+      <h1>Rudi's Lotto Wetterkarte</h1>
+      <p class="lead">Monat &amp; Jahr Ansichten. Ziehungen eines Zeitraums gestapelt. Die Wetterfarben richten sich nach der häufigsten Lottozahl im gewählten Zeitraum.</p>
+    </header>
+
+    <p class="status" id="status">Lade Ziehungsarchiv …</p>
+    <p id="count-line">Nächste Ziehung …</p>
+    <p class="swipe-hint">Auf dem Handy: nach links oder rechts wischen, um Monat bzw. Jahr zu wechseln.</p>
+
+    <section class="card" id="pulse-card" style="margin-bottom:16px">
+      <h2 style="margin-bottom:8px">Herzschlag deines Scheins</h2>
+      <p class="fair" id="pulse-note">Sechs Lottozahlen plus Superzahl unten eintragen — dann pulsiert jede Ziehung im gewählten Zeitraum.</p>
+      <div class="ekg-wrap" id="pulse"></div>
+    </section>
+    <div id="legend-wrap" class="legend-wrap">
+      <p class="legend-label" id="legend-label">Häufigkeit wie auf einer Wetterkarte: kalt = selten · heiß = oft</p>
+      <div class="legend" id="legend"></div>
+    </div>
+
+    <div id="view-month">
+      <div class="grid-layout">
+        <section class="card">
+          <div class="card-head" data-toggle="week">
+            <h2 id="cal-title">Wochen-Overlay</h2>
+            <span class="mode-hint" id="hint-week">Wetterkarte</span>
+          </div>
+          <div id="weeks"></div>
+        </section>
+        <section class="card">
+          <div class="card-head" data-toggle="month">
+            <h2 id="ticket-title">Schein</h2>
+            <span class="mode-hint" id="hint-month">Wetterkarte</span>
+          </div>
+          <div class="stats" id="m-stats"></div>
+          <div class="ticket" id="m-ticket"></div>
+          <p class="fair">Häufigkeit der Lottozahlen in diesem Monat ist nur Vergangenheit — sie ändert nicht die Chance der nächsten Ziehung.</p>
+          <div class="toplist" id="m-top"></div>
+          <div id="m-sz"></div>
+          <p class="star-line" id="m-star"></p>
+        </section>
+      </div>
+      <section class="card" style="margin-top:16px">
+        <h2 style="margin-bottom:12px">Diagramm | meistgezogene Lottozahlen im Monat</h2>
+        <div class="bars" id="m-chart"></div>
+      </section>
+      <section class="card zoo" style="margin-top:16px">
+        <h2 style="margin-bottom:8px">Lebensräume · Monat</h2>
+        <p class="zoo-note" id="m-zoo-note"></p>
+        <div class="zoo-grid" id="m-zoo"></div>
+        <div class="forecast" id="m-forecast"></div>
+      </section>
+    </div>
+
+    <div id="view-year" class="hidden">
+      <section class="card" style="margin-bottom:16px">
+        <div class="card-head" data-toggle="year">
+          <h2 id="year-title">Jahr</h2>
+          <span class="mode-hint" id="hint-year">Wetterkarte</span>
+        </div>
+        <div class="stats" id="y-stats"></div>
+        <div class="ticket" id="y-ticket"></div>
+        <p class="fair">Häufigkeit der Lottozahlen in diesem Jahr ist nur Vergangenheit — sie ändert nicht die Chance der nächsten Ziehung.</p>
+        <div class="toplist" id="y-top"></div>
+        <div id="y-sz"></div>
+        <p class="star-line" id="y-star"></p>
+      </section>
+      <section class="card" style="margin-bottom:16px">
+        <h2 style="margin-bottom:12px">Diagramm | meistgezogene Lottozahlen im Jahr</h2>
+        <div class="bars" id="y-chart"></div>
+      </section>
+      <section class="card zoo" style="margin-bottom:16px">
+        <h2 style="margin-bottom:8px">Lebensräume · Jahr</h2>
+        <p class="zoo-note" id="y-zoo-note"></p>
+        <div class="zoo-grid" id="y-zoo"></div>
+        <div class="forecast" id="y-forecast"></div>
+      </section>
+      <div class="year-grid" id="year-grid"></div>
+    </div>
+
+    <section class="card" id="tips-card" style="margin-top:16px">
+      <h2 style="margin-bottom:10px">Nächste Ziehungen | nur Tipps</h2>
+      <p class="warn" id="tips-warn">
+        Das sind Spiel-Tipps nach dem Tier-Schema, keine Vorhersage des Zufalls.
+        Jede der 49 Zahlen hat in jeder Ziehung dieselbe Chance. Vergangene Kugeln ändern das nicht.
+      </p>
+      <p style="margin:0 0 10px"><button type="button" id="btn-rand">Zufalls-Tipp (6 aus 49)</button></p>
+      <div class="tip-grid" id="next-tips"></div>
+      <div id="rand-box" class="tip-draw" style="margin:10px 0 16px;display:none"></div>
+      <div class="explain">
+        <h3>Wie die Tipps entstehen</h3>
+        <p>
+          Das Gehege teilt den Schein in sieben Reihen: Wiese, Wald, Wasser, Savanne, Kuschel, Schnee, Nacht.
+          Eine „aktive“ Reihe in der aktuellen Monats- oder Jahresansicht bedeutet nur:
+          dort lagen zuletzt mehrere Kugeln. Der Tipp füllt Lücken in genau diesen Mustern —
+          fehlende Zahlen derselben Reihe, derselben Endziffer oder direkt neben einer schon gefallenen Zahl.
+        </p>
+        <h3>Die Argumente auf der Karte</h3>
+        <p>
+          <b>Reihe aktiv</b> heißt: In diesem Zeitraum wurden Nachbarn auf dem Schein (dieselbe Siebener-Zeile) schon gezogen.
+          Das ist ein optisches Cluster, kein physikalisches.
+          <b>Endziffer</b> gruppiert 7, 17, 27, 37, 47. Wenn mehrere davon schon da waren, schlägt das Schema die fehlende vor.
+          <b>Nachbarzahl</b> meint n−1 oder n+1 in der letzten Zeit.
+          <b>Kalendermonat</b> zählt, wie oft die Zahl in allen bisherigen Augusten, Septembern usw. vorkam — wieder nur Geschichte, keine Tendenz.
+        </p>
+        <h3>Warum trotzdem Tiere?</h3>
+        <p>
+          Die Tiere machen das Muster lesbar. Wer „Giraffe“ sieht, denkt an die Savannen-Zeile 22–28,
+          nicht an eine magische 24. Die Prognose sagt also: „dieses Tier gehört in eine Lücke des aktuellen Bildes“,
+          nicht: „dieses Tier gewinnt“.
+        </p>
+        <h3>Was das Schema nicht kann</h3>
+        <p>
+          Lotto 6aus49 zieht ohne Gedächtnis. Eine Zahl, die im September schon dreimal fiel,
+          ist am nächsten Samstag nicht „fällig“ und nicht „verbraucht“.
+          Häufigkeiten auf dieser Seite beschreiben nur die Vergangenheit der gewählten Ansicht.
+          Spielen nur, wenn es Spaß macht — und nur mit Geld, das wegsein darf.
+        </p>
+      </div>
+    </section>
+
+    <footer>Archiv ab 1955. Tipps sind Unterhaltung. Angaben ohne Gewähr.</footer>
+    <div class="own-bar">
+      <form id="own-form">
+        <select id="on1" required></select>
+        <select id="on2" required></select>
+        <select id="on3" required></select>
+        <select id="on4" required></select>
+        <select id="on5" required></select>
+        <select id="on6" required></select>
+        <label for="osz">Zusatzzahl</label>
+        <select id="osz" required></select>
+        <button type="submit" title="Anwenden">✓</button>
+        <button type="button" id="own-clear" title="Löschen">✕</button>
+        <span class="own-hit" id="own-hit"></span>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const NAMES = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+    const CSV_URL = "https://raw.githubusercontent.com/daowa89/lottery-archive/main/de/lotto_6aus49/results.csv";
+    const FALLBACK = `date,n1,n2,n3,n4,n5,n6,superzahl
+2026-08-01,19,20,22,25,31,42,8
+2026-08-05,15,23,24,36,44,49,0
+2026-08-08,2,8,22,30,38,43,4
+2026-08-12,7,20,22,27,29,39,2
+2026-08-15,7,13,24,26,32,45,5
+2026-08-19,3,23,31,33,35,47,6
+2026-08-22,7,16,22,28,30,31,4
+2026-08-26,6,15,30,33,42,49,1
+2026-08-29,9,18,28,39,41,48,6
+2026-09-02,8,19,23,32,44,45,8
+2026-09-05,6,11,28,31,37,47,5
+2026-09-09,7,24,28,30,39,41,5`;
+
+    /* Wetterkarte kalt → heiß (1 selten … 12+ sehr häufig) */
+    const SCALE = [
+      null,
+      { bg: "#1d4ed8", fg: "#fff" },
+      { bg: "#2563eb", fg: "#fff" },
+      { bg: "#0ea5e9", fg: "#082f49" },
+      { bg: "#22d3ee", fg: "#083344" },
+      { bg: "#4ade80", fg: "#052e16" },
+      { bg: "#a3e635", fg: "#1a2e05" },
+      { bg: "#facc15", fg: "#422006" },
+      { bg: "#fb923c", fg: "#431407" },
+      { bg: "#f97316", fg: "#fff7ed" },
+      { bg: "#ef4444", fg: "#fff" },
+      { bg: "#b91c1c", fg: "#fff" },
+      { bg: "#7f1d1d", fg: "#fff" }
+    ];
+
+    let draws = [];
+    let view = "month";
+    let year = 2026;
+    let month = 8;
+    let years = [2026];
+    let day = "both";
+    let parity = "all";
+    let ownNums = [];
+    let ownSz = null;
+    let look = { week: "grafik", month: "grafik", year: "grafik" };
+
+    const $ = (id) => document.getElementById(id);
+
+    function maxFreq(f) {
+      let m = 0;
+      for (const k in f) if (f[k] > m) m = f[k];
+      return m;
+    }
+
+    function colorStep(count, max) {
+      if (!count) return 0;
+      if (!max || max <= 1) return 1;
+      return Math.max(1, Math.min(12, Math.round(1 + (count - 1) / (max - 1) * 11)));
+    }
+
+    function styleFor(count, max) {
+      const t = SCALE[colorStep(count, max)];
+      if (!t) return "";
+      const glow = colorStep(count, max) >= 10 ? "0 0 12px rgba(185,28,28,.45)," : "";
+      return `background:${t.bg};color:${t.fg};box-shadow:${glow}inset 0 1px 0 rgba(255,255,255,.2)`;
+    }
+    const fmt = (iso) => iso.slice(8,10) + "." + iso.slice(5,7) + ".";
+    const isoWeek = (iso) => {
+      const d = new Date(iso + "T12:00:00");
+      const dayNr = (d.getDay() + 6) % 7;
+      d.setDate(d.getDate() - dayNr + 3);
+      const first = new Date(d.getFullYear(), 0, 4);
+      return 1 + Math.round((d - first) / 604800000);
+    };
+
+    function parseCsv(text) {
+      const out = [];
+      const lines = text.trim().split(/\r?\n/);
+      for (let i = 1; i < lines.length; i++) {
+        const p = lines[i].split(",");
+        if (p.length < 7) continue;
+        const jsDay = new Date(p[0] + "T12:00:00").getDay();
+        out.push({
+          date: p[0],
+          y: +p[0].slice(0,4),
+          m: +p[0].slice(5,7),
+          wd: jsDay === 3 ? "Mi" : "Sa",
+          nums: [+p[1], +p[2], +p[3], +p[4], +p[5], +p[6]],
+          sz: p[7] === "" || p[7] == null ? "–" : p[7]
+        });
+      }
+      return out;
+    }
+
+    function filtered(list) {
+      if (day === "both") return list;
+      return list.filter(d => d.wd === day);
+    }
+
+    function freqOf(list) {
+      const f = {};
+      list.forEach(d => d.nums.forEach(n => f[n] = (f[n] || 0) + 1));
+      return f;
+    }
+
+    function applyParity() {
+      document.querySelectorAll(".ticket").forEach(el => {
+        el.classList.toggle("hide-odd", parity === "even");
+        el.classList.toggle("hide-even", parity === "odd");
+      });
+    }
+
+    function expectedHits(drawsN) {
+      return Math.round(drawsN * 6 / 49 * 10) / 10;
+    }
+
+    function starHtml(f, list, when) {
+      const entries = Object.entries(f).sort((a,b) => b[1]-a[1] || a[0]-b[0]);
+      if (!entries.length) return "";
+      const [n, c] = entries[0];
+      const [emo, name, bio] = ZOO[+n];
+      const rowHits = [0,0,0,0,0,0,0];
+      for (let i = 1; i <= 49; i++) if (f[i]) rowHits[rowOf(i)] += f[i];
+      const bi = rowHits.indexOf(Math.max(...rowHits));
+      const exp = expectedHits(list.length);
+      return `${emo} <b>Tier ${when}: ${name}</b> (Lottozahl ${n}, ${c}×). Gehege-Wetter: „${ROWS[bi]}“ war am aktivsten. Erwartung je Lottozahl bei ${list.length} Ziehungen ca. ${exp}× — Abweichung ist Zufall, kein Signal.`;
+    }
+
+    function tickCountdown() {
+      const el = $("count-line");
+      if (!el || !draws.length) return;
+      const last = draws[draws.length - 1];
+      const next = upcomingDraws()[0];
+      if (!next) return;
+      const hour = next.wd === "Mi" ? 18 : 19;
+      const t = new Date(next.date + "T" + (hour < 10 ? "0" : "") + hour + ":25:00");
+      const ms = t - Date.now();
+      const label = next.wd === "Mi" ? "Mittwoch" : "Samstag";
+      if (ms <= 0) {
+        el.textContent = "Nächste Ziehung: " + label + " " + fmt(next.date) + next.date.slice(0,4) + " (laut Archiv nach " + last.wd + " " + fmt(last.date) + ")";
+        return;
+      }
+      const h = Math.floor(ms / 3600000);
+      const m = Math.floor((ms % 3600000) / 60000);
+      el.textContent = "Nächste Ziehung " + label + " " + fmt(next.date) + " · noch " + h + " Std " + m + " Min (ungefähr, Ziehungszeit ca. " + hour + ":25)";
+    }
+
+    function hottest(f) {
+      let n = null, c = 0;
+      for (const k in f) if (f[k] > c) { c = f[k]; n = k; }
+      return n ? n + " · " + c + "×" : "–";
+    }
+
+    function dayLabel() {
+      return day === "Mi" ? "nur Mittwoch" : day === "Sa" ? "nur Samstag" : "Mi | Sa";
+    }
+
+    const ZOO = [
+      null,
+      ["🐰","Hase","Wiese"],["🦔","Igel","Wiese"],["🐥","Küken","Wiese"],["🦊","Fuchs","Wiese"],["🐱","Kätzchen","Wiese"],["🐶","Welpe","Wiese"],["🦉","Eule","Wiese"],
+      ["🐼","Panda","Wald"],["🐨","Koala","Wald"],["🐿️","Eichhörnchen","Wald"],["🦝","Waschbär","Wald"],["🦌","Rehkitz","Wald"],["🦡","Dachs","Wald"],["🐺","Wolfswelpe","Wald"],
+      ["🐧","Pinguin","Wasser"],["🦦","Otter","Wasser"],["🦭","Seehund","Wasser"],["🐢","Schildkröte","Wasser"],["🐠","Fisch","Wasser"],["🐙","Oktopus","Wasser"],["🪼","Qualle","Wasser"],
+      ["🦁","Löwenkind","Savanne"],["🐯","Tigerkind","Savanne"],["🐘","Elefant","Savanne"],["🦒","Giraffe","Savanne"],["🦓","Zebra","Savanne"],["🦛","Nilpferd","Savanne"],["🦘","Känguru","Savanne"],
+      ["🐹","Hamster","Kuschel"],["🐭","Mäuschen","Kuschel"],["🦫","Biber","Kuschel"],["🦥","Faultier","Kuschel"],["🦙","Lama","Kuschel"],["🐐","Zicklein","Kuschel"],["🐻","Teddybär","Kuschel"],
+      ["🐻‍❄️","Eisbär","Schnee"],["🦊","Polarfuchs","Schnee"],["🦌","Rentier","Schnee"],["🦉","Schneeeule","Schnee"],["🦭","Robbe","Schnee"],["🐺","Husky","Schnee"],["🐧","Kaiserpinguin","Schnee"],
+      ["🦇","Fledermaus","Nacht"],["🦎","Gecko","Nacht"],["🐸","Frosch","Nacht"],["🦋","Falter","Nacht"],["🌟","Glühwürmchen","Nacht"],["🐲","Drache","Nacht"],["🦄","Einhorn","Nacht"]
+    ];
+    const ROWS = ["Wiese","Wald","Wasser","Savanne","Kuschel","Schnee","Nacht"];
+
+    function rowOf(n) { return Math.ceil(n / 7) - 1; }
+
+    function predictWhy(n, f) {
+      const row = rowOf(n);
+      const end = n % 10;
+      let rowHits = 0, endHits = 0, near = 0;
+      for (let i = 1; i <= 49; i++) {
+        if (!f[i]) continue;
+        if (rowOf(i) === row) rowHits += f[i];
+        if (i % 10 === end) endHits += f[i];
+        if (i === n - 1 || i === n + 1) near += f[i];
+      }
+      const hist = freqOf(filtered(draws.filter(d => d.m === month)))[n] || 0;
+      const score = rowHits * 2 + endHits * 2 + near * 3 + hist;
+      let why = "Außenseiter der Periode";
+      if (near) why = "Nachbarzahl war schon da";
+      else if (rowHits >= endHits && rowHits) why = "Reihe „" + ROWS[row] + "“ ist aktiv";
+      else if (endHits) why = "Endziffer " + end + " kommt oft";
+      else if (hist) why = "in diesem Kalendermonat historisch dabei";
+      return { score, why, hist };
+    }
+
+    function addDays(iso, n) {
+      const d = new Date(iso + "T12:00:00");
+      d.setDate(d.getDate() + n);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, "0");
+      const dayN = String(d.getDate()).padStart(2, "0");
+      return y + "-" + m + "-" + dayN;
+    }
+
+    function upcomingDraws() {
+      const last = draws[draws.length - 1];
+      if (!last) return [];
+      const out = [];
+      let iso = last.date;
+      let wd = last.wd;
+      while (out.length < 2) {
+        if (wd === "Mi") { iso = addDays(iso, 3); wd = "Sa"; }
+        else { iso = addDays(iso, 4); wd = "Mi"; }
+        out.push({ date: iso, wd });
+      }
+      return out;
+    }
+
+    function tipSet(focusWd) {
+      const last = draws[draws.length - 1] || { y: year, m: month };
+      const monthF = freqOf(filtered(draws.filter(d => d.y === last.y && d.m === last.m)));
+      const recent = freqOf(filtered(draws.slice(-16)));
+      const histM = freqOf(filtered(draws.filter(d => d.m === last.m)));
+      const histWd = freqOf(filtered(draws.filter(d => d.wd === focusWd && d.m === last.m)));
+      const scored = [];
+      for (let n = 1; n <= 49; n++) {
+        const p = predictWhy(n, monthF);
+        const rec = recent[n] || 0;
+        const hm = histM[n] || 0;
+        const hw = histWd[n] || 0;
+        const gap = monthF[n] ? 0 : 8;
+        const score = p.score + gap + hw + Math.round(hm / 8) - rec;
+        scored.push({ n, score, why: p.why, monthC: monthF[n] || 0, rec, hw });
+      }
+      scored.sort((a, b) => b.score - a.score || a.n - b.n);
+      const picked = [];
+      const biomes = {};
+      for (const item of scored) {
+        const bio = ZOO[item.n][2];
+        if ((biomes[bio] || 0) >= 2) continue;
+        if (picked.length >= 6) break;
+        biomes[bio] = (biomes[bio] || 0) + 1;
+        picked.push(item);
+      }
+      picked.sort((a, b) => a.n - b.n);
+      return picked;
+    }
+
+    function habitatFazit(list) {
+      const f = freqOf(list);
+      const heats = ROWS.map((_, r) => {
+        let h = 0, missing = [];
+        for (let k = 1; k <= 7; k++) {
+          const n = r * 7 + k;
+          h += f[n] || 0;
+          if (!f[n]) missing.push(n);
+        }
+        return { r, h, missing, name: ROWS[r] };
+      }).sort((a, b) => b.h - a.h);
+      const hot = heats.filter(x => x.h > 0).slice(0, 3);
+      const pick = [];
+      hot.forEach(row => {
+        const pool = row.missing.length ? row.missing : [row.r * 7 + 1, row.r * 7 + 4];
+        pool.forEach(n => { if (pick.length < 6 && !pick.includes(n)) pick.push(n); });
+      });
+      for (let n = 1; n <= 49 && pick.length < 6; n++) if (!pick.includes(n) && !f[n]) pick.push(n);
+      for (let n = 1; n <= 49 && pick.length < 6; n++) if (!pick.includes(n)) pick.push(n);
+      pick.sort((a, b) => a - b);
+      const sf = szFreq(list);
+      const szPick = Object.keys(sf).length
+        ? +Object.entries(sf).sort((a, b) => a[1] - b[1] || a[0] - b[0])[0][0]
+        : 7;
+      const fazit = "Fazit Lebensräume: aktiv waren " + hot.map(x => x.name).join(", ") +
+        ". Tipp füllt Lücken in diesen Biotopen. Zufall bleibt Zufall.";
+      return { pick, szPick, fazit, hot };
+    }
+
+    function renderUpcomingTips() {
+      const next = upcomingDraws();
+      if (!next.length) {
+        $("next-tips").innerHTML = "";
+        return;
+      }
+      const last = draws[draws.length - 1];
+      const src = currentList().length ? currentList() : filtered(draws.filter(d => d.y === last.y && d.m === last.m));
+      const hab = habitatFazit(src);
+      $("tips-warn").innerHTML =
+        "Stand letzte Ziehung im Archiv: <b>" + last.wd + " " + fmt(last.date) + last.y +
+        "</b>. Tipps aus den Lebensräumen, keine Gewinnwahrscheinlichkeit.";
+      const habBalls = hab.pick.map(n => {
+        const [emo, name] = ZOO[n];
+        return `<span class="ball" title="${n} ${name}">${emo}</span>`;
+      }).join("") + `<span class="ball sz-draw" title="Zusatzzahl">${hab.szPick}</span>`;
+      const habList = hab.pick.map(n => {
+        const [emo, name, bio] = ZOO[n];
+        return `<li>${emo} <b>${n} ${name}</b> | ${bio}</li>`;
+      }).join("") + `<li>Zusatzzahl <b>${hab.szPick}</b></li>`;
+      const cards = [`<article class="tip-draw">
+        <h3>Tipp aus den Lebensräumen</h3>
+        <div class="tip-row">${habBalls}</div>
+        <p class="fair">${hab.fazit}</p>
+        <ul class="why">${habList}</ul>
+      </article>`];
+      next.forEach(ev => {
+        const set = tipSet(ev.wd);
+        const label = ev.wd === "Mi" ? "Mittwoch" : "Samstag";
+        const balls = set.map(s => {
+          const [emo] = ZOO[s.n];
+          return `<span class="ball" title="${s.n}" style="${styleFor(Math.max(1, s.monthC), 4)}">${emo}</span>`;
+        }).join("");
+        const reasons = set.map(s => {
+          const [emo, name, bio] = ZOO[s.n];
+          const extra = s.monthC ? "schon " + s.monthC + "× im laufenden Monat" : "fehlt im laufenden Monat";
+          return `<li>${emo} <b>${s.n} ${name}</b> | ${bio} | ${s.why} | ${extra}</li>`;
+        }).join("");
+        cards.push(`<article class="tip-draw">
+          <h3>${label} | ${fmt(ev.date)}${ev.date.slice(0,4)}</h3>
+          <div class="tip-row">${balls}</div>
+          <ul class="why">${reasons}</ul>
+        </article>`);
+      });
+      $("next-tips").innerHTML = cards.join("");
+    }
+
+    function zooHtml(f, max) {
+      const SKY = [
+        "Nebel liegt über dem Gehege — kaum Bewegung.",
+        "Leichter Niesel, einzelne Tiere draußen.",
+        "Wechselhaftes Licht, das Rudel ist wach.",
+        "Warm und unruhig, fast alle sind unterwegs.",
+        "Gewitter über dem Biotop — hohe Aktivität."
+      ];
+      let grid = "";
+      for (let r = 0; r < 7; r++) {
+        let heat = 0, out = 0;
+        let herd = "";
+        for (let k = 1; k <= 7; k++) {
+          const n = r * 7 + k;
+          const [emo, name] = ZOO[n];
+          const c = f[n] || 0;
+          heat += c;
+          if (!c) out++;
+          herd += `<div class="beast${c ? "" : " out"}" title="Lottozahl ${n} · ${name}${c ? " · " + c + "×" : " · noch nicht draußen"}"><span class="emo">${emo}</span><span class="nm">${name}</span><span class="nr">${n}</span></div>`;
+        }
+        const step = heat ? colorStep(heat, Math.max(1, max * 7)) : 0;
+        const sky = !heat ? SKY[0] : heat < max ? SKY[1] : heat < max * 3 ? SKY[2] : heat < max * 5 ? SKY[3] : SKY[4];
+        const t = SCALE[Math.max(1, step)];
+        grid += `<article class="habitat" style="background:${t ? t.bg + "22" : "#12182b"};border-color:${t ? t.bg : "var(--line)"}"><h3>${ROWS[r]}</h3><p>${sky}${out ? " · " + out + " Tiere im Bau." : " · alle sieben draußen."}</p><div class="herd">${herd}</div></article>`;
+      }
+      return { grid, top: "" };
+    }
+
+    function ticketHtml(f, compact, max) {
+      max = max || maxFreq(f) || 1;
+      let html = "";
+      for (let n = 1; n <= 49; n++) {
+        const c = f[n] || 0;
+        const extra = compact || !c ? "" : `<small>${c}×</small>`;
+        const mine = ownNums.includes(n) ? " mine" : "";
+        html += `<div class="cell ${n % 2 ? "odd" : "even"}${mine}" style="${styleFor(c, max)}" title="Lottozahl ${n}: ${c}×">${compact ? "" : n}${extra}</div>`;
+      }
+      return html;
+    }
+
+    function ballHtml(n, count, max) {
+      return `<span class="ball${ownNums.includes(+n) ? " mine" : ""}" style="${styleFor(count, max)}" title="Lottozahl ${n}: ${count}×">${n}</span>`;
+    }
+
+    function topHtml(f, max, limit) {
+      const items = Object.entries(f)
+        .sort((a, b) => b[1] - a[1] || a[0] - b[0])
+        .slice(0, limit || 8);
+      if (!items.length) return "";
+      return `<h3>Meistgezogene Lottozahlen</h3>` + items.map(([n, c]) =>
+        `<div class="top-item">${ballHtml(+n, c, max)}<b>${c}×</b></div>`
+      ).join("");
+    }
+
+    function orbHtml(n, count, max, px) {
+      const t = SCALE[colorStep(count, max)];
+      const size = px || Math.round(30 + (count / Math.max(1, max)) * 38);
+      const fs = Math.max(11, Math.round(size * 0.38));
+      const glow = colorStep(count, max) >= 10 ? "0 0 14px rgba(185,28,28,.4)," : "";
+      return `<span class="orb" title="${n}: ${count}×" style="width:${size}px;height:${size}px;font-size:${fs}px;background:${t?t.bg:"#22304d"};color:${t?t.fg:"#fff"};box-shadow:${glow}inset 0 1px 0 rgba(255,255,255,.22)">${n}</span>`;
+    }
+
+    function rnd(n, k) {
+      const x = Math.sin(n * 12.9898 + k * 78.233) * 43758.5453;
+      return x - Math.floor(x);
+    }
+
+    function rankListHtml(f, max, board) {
+      max = max || maxFreq(f) || 1;
+      let puffs = "";
+      let cells = "";
+      for (let n = 1; n <= 49; n++) {
+        const c = f[n] || 0;
+        const t = c ? SCALE[colorStep(c, max)] : null;
+        cells += `<i style="${t ? `background:${t.bg};opacity:${0.45 + (c / max) * 0.55}` : "background:transparent"}"></i>`;
+        if (!c) continue;
+        const col = (n - 1) % 7;
+        const row = Math.floor((n - 1) / 7);
+        const layers = 2;
+        for (let k = 0; k < layers; k++) {
+          const w = 12 + (c / max) * 20 + k * 4;
+          const left = ((col + 0.5) / 7) * 100 + (rnd(n, k) - 0.5) * 8;
+          const top = ((row + 0.5) / 7) * 100 + (rnd(n, k + 3) - 0.5) * 8;
+          const op = 0.22 + (c / max) * 0.38 - k * 0.06;
+          puffs += `<span class="puff" style="left:${left}%;top:${top}%;width:${w}%;padding-top:${w * (0.72 + rnd(n, k + 7) * 0.3)}%;background:${t.bg};opacity:${op};transform:translate(-50%,-50%) rotate(${Math.round(rnd(n, k + 9) * 50 - 25)}deg);border-radius:${40 + rnd(n, k + 2) * 40}% ${50 + rnd(n, k + 4) * 40}% ${45 + rnd(n, k + 5) * 40}% ${55 + rnd(n, k + 6) * 30}%;"></span>`;
+        }
+      }
+      let ghosts = "";
+      for (let n = 1; n <= 49; n++) ghosts += `<span class="ghost${ownNums.includes(n) ? " mine" : ""}">${n}</span>`;
+      return `<div class="cloudmap${board ? "" : " mini"}" title="Wolkenkarte der Häufigkeit"><div class="cloud-cells">${cells}</div><div class="puffs">${puffs}</div><div class="ghosts">${ghosts}</div></div>`;
+    }
+
+    function chartHtml(f, max, limit, list) {
+      const items = Object.entries(f)
+        .filter(([, c]) => c > 0)
+        .sort((a, b) => b[1] - a[1] || a[0] - b[0])
+        .slice(0, limit || 12);
+      if (!items.length) return "";
+      const top = items[0][1] || 1;
+      let html = items.map(([n, c]) => {
+        const h = Math.max(8, Math.round((c / top) * 120));
+        const t = SCALE[colorStep(+c, max)];
+        return `<div class="bar-col" title="Lottozahl ${n}: ${c}×">
+          <div class="bar" style="height:${h}px;background:${t ? t.bg : "#64748b"}"></div>
+          ${ballHtml(+n, c, max)}
+          <small>${c}×</small>
+        </div>`;
+      }).join("");
+      if (list && list.length) {
+        const sf = szFreq(list);
+        const szs = Object.entries(sf).sort((a, b) => b[1] - a[1] || a[0] - b[0]);
+        if (szs.length) {
+          const stop = szs[0][1] || 1;
+          html += szs.map(([z, c]) => {
+            const h = Math.max(8, Math.round((c / stop) * 120));
+            return `<div class="bar-col" title="Superzahl ${z}: ${c}×">
+              <div class="bar" style="height:${h}px;background:#e8c36a"></div>
+              <span class="sz-draw">${z}</span>
+              <small>${c}×</small>
+            </div>`;
+          }).join("");
+        }
+      }
+      return html;
+    }
+
+    function legendBar(max) {
+      max = max || 1;
+      let html = `<div class="legend local">`;
+      for (let i = 1; i <= 12; i++) {
+        const value = max <= 1 ? 1 : 1 + (i - 1) / 11 * (max - 1);
+        const show = i === 1 || i === 12 || i === 6 || i === 3 || i === 9;
+        const label = !show ? "" : (i === 12 ? max + "×" : Math.round(value) + "×");
+        html += `<div class="step" style="background:${SCALE[i].bg};color:${SCALE[i].fg}">${label}</div>`;
+      }
+      return html + `</div>`;
+    }
+
+    function renderLegend(max) {
+      max = max || 1;
+      $("legend-label").textContent =
+        "Wetterskala der Lottozahlen im gewählten Zeitraum: 1× kalt → " + max + "× heiß. Die Superzahl 0–9 steht separat darunter.";
+      $("legend").innerHTML = legendBar(max).replace('legend local', 'legend');
+    }
+
+    function szFreq(list) {
+      const f = {};
+      list.forEach(d => {
+        if (d.sz === "–" || d.sz === "" || d.sz == null) return;
+        const z = +d.sz;
+        if (z >= 0 && z <= 9) f[z] = (f[z] || 0) + 1;
+      });
+      return f;
+    }
+
+    function szTopHtml(list) {
+      const f = szFreq(list);
+      const items = Object.entries(f).sort((a, b) => b[1] - a[1] || a[0] - b[0]);
+      if (!items.length) return "";
+      return `<div class="toplist"><h3>Häufigkeit der Superzahlen</h3>` + items.map(([z, c]) =>
+        `<div class="top-item${ownSz === +z ? " mine" : ""}"><span class="ball sz-draw" title="Superzahl ${z}: ${c}×">${z}</span><b>${c}×</b></div>`
+      ).join("") + `</div>`;
+    }
+
+    function szHtml(list) {
+      const f = szFreq(list);
+      const vals = Object.values(f);
+      const max = Math.max(1, ...(vals.length ? vals : [1]));
+      let cells = "";
+      for (let z = 0; z <= 9; z++) {
+        const c = f[z] || 0;
+        cells += `<div class="sz-cell${ownSz === z ? " mine" : ""}" style="${c ? styleFor(c, max) : ""}" title="Superzahl ${z}: ${c}×"><b>${z}</b><small>${c ? c + "×" : ""}</small></div>`;
+      }
+      return `<div class="sz-box"><div class="sz-label">Superzahl · Häufigkeit 0–9</div><div class="sz-row">${cells}</div></div>`;
+    }
+
+    function fillSelects() {
+      $("year").innerHTML = years.map(y => `<option value="${y}" ${y===year?"selected":""}>${y}</option>`).join("");
+      $("month").innerHTML = NAMES.map((n,i) => `<option value="${i+1}" ${i+1===month?"selected":""}>${String(i+1).padStart(2,"0")}</option>`).join("");
+      $("month").disabled = view === "year";
+      document.querySelectorAll("#day-filter button").forEach(b => {
+        b.classList.toggle("active", b.dataset.day === day);
+      });
+    }
+
+    function renderMonth() {
+      const list = filtered(draws.filter(d => d.y === year && d.m === month));
+      const monthName = NAMES[month-1];
+      $("cal-title").textContent = (look.week === "liste"
+        ? "Wetterkarte · alle Wochen " + monthName + " " + year + " überlagert"
+        : "Lottozahlen aller Wochen · " + monthName + " " + year + " überlagert") + " · " + dayLabel();
+      $("ticket-title").textContent = look.month === "liste"
+        ? "Wetterkarte der Lottozahlen · " + monthName + " " + year
+        : "Häufigkeit der Lottozahlen · " + monthName + " " + year;
+      $("hint-week").textContent = look.week === "liste" ? "Grafik" : "Wetterkarte";
+      $("hint-month").textContent = look.month === "liste" ? "Grafik" : "Wetterkarte";
+      if (!list.length) {
+        $("weeks").innerHTML = `<p class="status">Keine Ziehungen in ${monthName} ${year} (${dayLabel()}).</p>`;
+        $("m-stats").innerHTML = "";
+        $("m-ticket").innerHTML = ticketHtml({});
+        $("m-top").innerHTML = "";
+        if ($("m-sz")) $("m-sz").innerHTML = "";
+        $("m-chart").innerHTML = "";
+        $("m-zoo").innerHTML = "";
+        $("m-forecast").innerHTML = "";
+        $("m-zoo-note").textContent = "";
+        renderLegend(1);
+        return;
+      }
+      const mf = freqOf(list);
+      const monthMax = Math.max(1, maxFreq(mf));
+      renderLegend(monthMax);
+      const groups = {};
+      list.forEach(d => {
+        const w = isoWeek(d.date);
+        (groups[w] ||= []).push(d);
+      });
+      const kws = Object.keys(groups);
+      const overlayNums = Object.keys(mf).map(Number).sort((a,b)=>a-b);
+      const drawLog = list.map(d => `
+        <div class="draw-row">
+          <span class="tag ${d.wd==="Mi"?"mi":"sa"}">${d.wd==="Mi"?"Mittwoch":"Samstag"}</span>
+          <div class="balls">${d.nums.map(n => ballHtml(n, mf[n], monthMax)).join("")}<span class="sz-draw" title="Superzahl">${d.sz}</span></div>
+          <span class="sz">${fmt(d.date)}</span>
+        </div>`).join("");
+      const stacked = look.week === "liste"
+        ? rankListHtml(mf, monthMax, true)
+        : `<div class="ticket">${ticketHtml(mf, false, monthMax)}</div>
+           <div class="draw-row"><span class="tag ov">Überlagert</span><div class="balls">${overlayNums.map(n => ballHtml(n, mf[n], monthMax)).join("")}</div></div>`;
+      $("weeks").innerHTML = `<article class="week">
+        <div class="week-head"><strong>KW ${kws.join(" · ")}</strong><span>${kws.length} Wochen · ${list.length} Ziehungen überlagert</span></div>
+        ${legendBar(monthMax)}
+        ${stacked}
+        ${szHtml(list)}
+        ${drawLog}
+      </article>`;
+      $("m-stats").innerHTML = `
+        <div class="stat"><span>Ziehungen</span><b>${list.length}</b></div>
+        <div class="stat"><span>verschiedene Lottozahlen</span><b>${Object.keys(mf).length}</b></div>
+        <div class="stat"><span>häufigste / SZ</span><b>${hottest(mf)} · SZ ${hottest(szFreq(list))}</b></div>`;
+      if (look.month === "liste") {
+        $("m-ticket").innerHTML = rankListHtml(mf, monthMax, true);
+        $("m-top").innerHTML = "";
+      } else {
+        $("m-ticket").innerHTML = ticketHtml(mf, false, monthMax);
+        $("m-top").innerHTML = topHtml(mf, monthMax, 8);
+      }
+      $("m-sz").innerHTML = szHtml(list);
+      $("m-chart").innerHTML = chartHtml(mf, monthMax, 12, list);
+      const mz = zooHtml(mf, monthMax);
+      $("m-zoo-note").textContent = "Sieben Biotope nach den Schein-Reihen. Die Himmelstönung zeigt, wie belebt der Lebensraum in diesem Monat war — nicht welche Lottozahl „gewinnt“. Graue Tiere sind noch im Bau (diese Lottozahl fehlte).";
+      $("m-zoo").innerHTML = mz.grid;
+      $("m-forecast").innerHTML = mz.top || "<p class='status'>Alle 49 Lottozahlen dieses Monats waren schon da.</p>";
+      $("m-star").innerHTML = starHtml(mf, list, "des Monats");
+      applyParity();
+    }
+
+    function renderYear() {
+      const list = filtered(draws.filter(d => d.y === year));
+      $("year-title").textContent = (look.year === "liste"
+        ? "Wetterkarte der Lottozahlen · " + year
+        : "Häufigkeit der Lottozahlen · " + year) + " · " + dayLabel();
+      $("hint-year").textContent = look.year === "liste" ? "Grafik" : "Wetterkarte";
+      const yf = freqOf(list);
+      const yearMax = Math.max(1, maxFreq(yf));
+      renderLegend(yearMax);
+      $("y-stats").innerHTML = "";
+      $("y-sz").innerHTML = szTopHtml(list);
+      if (look.year === "liste") {
+        $("y-ticket").innerHTML = rankListHtml(yf, yearMax, true);
+        $("y-top").innerHTML = "";
+      } else {
+        $("y-ticket").innerHTML = ticketHtml(yf, false, yearMax);
+        $("y-top").innerHTML = topHtml(yf, yearMax, 10);
+      }
+      $("y-chart").innerHTML = chartHtml(yf, yearMax, 12, list);
+      const yz = zooHtml(yf, yearMax);
+      $("y-zoo-note").textContent = "Dieselben sieben Lebensräume fürs Jahr. Wetter über Wiese, Wald, Wasser, Savanne, Kuschel, Schnee und Nacht = Aktivität der ganzen Reihe. Alle 49 Tiere bleiben, fehlende Lottozahlen liegen grau im Bau.";
+      $("y-zoo").innerHTML = yz.grid;
+      $("y-forecast").innerHTML = yz.top || "<p class='status'>Alle 49 Lottozahlen dieses Jahres waren schon da.</p>";
+      $("y-star").innerHTML = starHtml(yf, list, "des Jahres");
+      applyParity();
+      $("year-grid").innerHTML = NAMES.map((name, i) => {
+        const m = i + 1;
+        const ml = list.filter(d => d.m === m);
+        const f = freqOf(ml);
+        const mMax = Math.max(1, maxFreq(f));
+        const body = look.year === "liste"
+          ? rankListHtml(f, mMax)
+          : `<div class="ticket mini">${ticketHtml(f, false, mMax)}</div>`;
+        return `<button class="month-tile" data-month="${m}">
+          <h3>${name}<span>${ml.length}</span></h3>
+          ${body}
+        </button>`;
+      }).join("");
+      $("year-grid").querySelectorAll(".month-tile").forEach(btn => {
+        btn.onclick = () => {
+          month = +btn.dataset.month;
+          view = "month";
+          syncView();
+        };
+      });
+      applyParity();
+    }
+
+    function syncView() {
+      fillSelects();
+      $("btn-month").classList.toggle("active", view === "month");
+      $("btn-year").classList.toggle("active", view === "year");
+      $("view-month").classList.toggle("hidden", view !== "month");
+      $("view-year").classList.toggle("hidden", view !== "year");
+      const host = view === "month" ? $("view-month") : $("view-year");
+      host.insertBefore($("legend-wrap"), host.firstChild);
+      if (view === "month") renderMonth();
+      else renderYear();
+      renderUpcomingTips();
+      updateOwnHit();
+      renderPulse();
+    }
+
+    function currentList() {
+      return filtered(view === "year"
+        ? draws.filter(d => d.y === year)
+        : draws.filter(d => d.y === year && d.m === month));
+    }
+
+    function renderPulse() {
+      const box = $("pulse");
+      const note = $("pulse-note");
+      if (!box) return;
+      if (ownNums.length !== 6) {
+        box.innerHTML = "";
+        if (note) note.textContent = "Sechs Lottozahlen plus Superzahl unten eintragen — dann pulsiert jede Ziehung im gewählten Zeitraum.";
+        return;
+      }
+      const list = currentList();
+      if (!list.length) {
+        box.innerHTML = "";
+        if (note) note.textContent = "Keine Ziehungen in diesem Header-Filter.";
+        return;
+      }
+      if (note) note.textContent = list.length + " Ziehungen · " + dayLabel() + " · Ausschlag = deine Lottozahl (oder SZ) lag in dieser Ziehung.";
+      const rows = ownNums.map(n => {
+        const [emo] = ZOO[n] || ["", ""];
+        const beats = list.map(d => {
+          const hit = d.nums.includes(n);
+          return `<span class="ekg-beat${hit ? " on " + (d.wd === "Mi" ? "mi" : "sa") : ""}" title="${fmt(d.date)} ${d.wd}${hit ? " · Treffer" : ""}"></span>`;
+        }).join("");
+        return `<div class="ekg-row"><div class="ekg-lab">${emo} ${n}</div><div class="ekg-track">${beats}</div></div>`;
+      });
+      if (ownSz != null) {
+        const beats = list.map(d => {
+          const hit = String(d.sz) === String(ownSz);
+          return `<span class="ekg-beat${hit ? " on sz" : ""}" title="${fmt(d.date)} SZ ${d.sz}"></span>`;
+        }).join("");
+        rows.push(`<div class="ekg-row"><div class="ekg-lab">SZ <small>${ownSz}</small></div><div class="ekg-track">${beats}</div></div>`);
+      }
+      box.innerHTML = rows.join("");
+    }
+
+    function updateOwnHit() {
+      const el = $("own-hit");
+      if (!el) return;
+      if (ownNums.length !== 6) {
+        el.textContent = "6 Lottozahlen + Superzahl eintragen, dann Anwenden.";
+        return;
+      }
+      const list = filtered(view === "year"
+        ? draws.filter(d => d.y === year)
+        : draws.filter(d => d.y === year && d.m === month));
+      const f = freqOf(list);
+      const hits = ownNums.filter(n => f[n]).length;
+      const times = ownNums.reduce((s, n) => s + (f[n] || 0), 0);
+      const szf = szFreq(list);
+      const szHit = ownSz != null && szf[ownSz] ? szf[ownSz] : 0;
+      el.textContent = hits + " deiner 6 Lottozahlen kommen im Zeitraum vor (" + times + "× gesamt). SZ " + ownSz + " hier " + szHit + "×.";
+    }
+
+    function step(dir) {
+      if (view === "year") {
+        const i = years.indexOf(year);
+        year = years[Math.max(0, Math.min(years.length - 1, i + dir))];
+      } else {
+        month += dir;
+        if (month < 1) { month = 12; year = years.includes(year - 1) ? year - 1 : year; }
+        if (month > 12) { month = 1; year = years.includes(year + 1) ? year + 1 : year; }
+      }
+      syncView();
+    }
+
+    $("btn-month").onclick = () => { view = "month"; syncView(); };
+    $("btn-year").onclick = () => { view = "year"; syncView(); };
+    $("prev").onclick = () => step(-1);
+    $("next").onclick = () => step(1);
+    function ownPicked(exceptId) {
+      const taken = [];
+      for (let i = 1; i <= 6; i++) {
+        const id = "on" + i;
+        if (id === exceptId) continue;
+        const v = +($(id) && $(id).value);
+        if (v) taken.push(v);
+      }
+      return taken;
+    }
+
+    function fillOwnSelects() {
+      for (let i = 1; i <= 6; i++) {
+        const el = $("on" + i);
+        if (!el) continue;
+        const cur = el.value;
+        const taken = ownPicked("on" + i);
+        let html = `<option value="">–</option>`;
+        for (let n = 1; n <= 49; n++) {
+          if (taken.includes(n)) continue;
+          html += `<option value="${n}" ${String(n) === String(cur) ? "selected" : ""}>${n}</option>`;
+        }
+        el.innerHTML = html;
+      }
+      const sz = $("osz");
+      if (sz && !sz.options.length) {
+        let html = `<option value="">–</option>`;
+        for (let z = 0; z <= 9; z++) html += `<option value="${z}">${z}</option>`;
+        sz.innerHTML = html;
+      }
+    }
+
+    function ownError(msg) {
+      const el = $("own-hit");
+      el.className = "own-hit own-err";
+      el.textContent = msg;
+    }
+
+    $("own-form").onsubmit = (e) => {
+      e.preventDefault();
+      const raw = [1,2,3,4,5,6].map(i => $("on"+i).value);
+      if (raw.some(v => v === "")) {
+        ownError("Fehler: Es fehlen Lottozahlen. Bitte sechs Felder auswählen.");
+        return;
+      }
+      const nums = raw.map(Number);
+      const high = nums.filter(n => n > 49);
+      if (high.length) {
+        ownError("Fehler: Lottozahl " + high.join(", ") + " ist größer als 49. Erlaubt sind nur 1 bis 49.");
+        return;
+      }
+      const low = nums.filter(n => n < 1);
+      if (low.length) {
+        ownError("Fehler: Lottozahlen unter 1 sind unzulässig.");
+        return;
+      }
+      const seen = {};
+      const dup = [];
+      nums.forEach(n => { if (seen[n]) dup.push(n); else seen[n] = 1; });
+      if (dup.length) {
+        ownError("Fehler: Doppelte Lottozahl " + [...new Set(dup)].join(", ") + ". Jede Zahl darf nur einmal vorkommen.");
+        return;
+      }
+      const szVal = $("osz").value;
+      if (szVal === "") {
+        ownError("Fehler: Zusatzzahl fehlt. Bitte 0 bis 9 wählen.");
+        return;
+      }
+      const sz = +szVal;
+      if (sz > 9) {
+        ownError("Fehler: Zusatzzahl " + sz + " ist größer als 9. Erlaubt sind 0 bis 9.");
+        return;
+      }
+      if (sz < 0) {
+        ownError("Fehler: Zusatzzahl unter 0 ist unzulässig.");
+        return;
+      }
+      $("own-hit").className = "own-hit";
+      ownNums = nums;
+      ownSz = sz;
+      syncView();
+    };
+    $("own-clear").onclick = () => {
+      ownNums = [];
+      ownSz = null;
+      ["on1","on2","on3","on4","on5","on6","osz"].forEach(id => { if ($(id)) $(id).value = ""; });
+      fillOwnSelects();
+      $("own-hit").className = "own-hit";
+      syncView();
+    };
+    [1,2,3,4,5,6].forEach(i => {
+      const el = $("on" + i);
+      if (el) el.onchange = fillOwnSelects;
+    });
+    fillOwnSelects();
+
+    if ($("btn-full")) $("btn-full").onclick = async () => {
+      try {
+        if (!document.fullscreenElement) {
+          await document.documentElement.requestFullscreen();
+          $("btn-full").textContent = "Zurück";
+        } else {
+          await document.exitFullscreen();
+          $("btn-full").textContent = "Vollbild";
+        }
+      } catch (e) {
+        alert("Vollbild geht in dieser Vorschau nicht. Datei im Browser öffnen und F11 drücken.");
+      }
+    };
+    document.addEventListener("fullscreenchange", () => {
+      $("btn-full").textContent = document.fullscreenElement ? "Zurück" : "Vollbild";
+    });
+    $("year").onchange = e => { year = +e.target.value; syncView(); };
+    $("month").onchange = e => { month = +e.target.value; view = "month"; syncView(); };
+    document.querySelectorAll("#day-filter button").forEach(b => {
+      b.onclick = () => { day = b.dataset.day; syncView(); };
+    });
+    document.querySelectorAll("#parity-filter button").forEach(b => {
+      b.onclick = () => {
+        parity = b.dataset.par;
+        document.querySelectorAll("#parity-filter button").forEach(x => x.classList.toggle("active", x === b));
+        applyParity();
+      };
+    });
+    const randBtn = $("btn-rand");
+    if (randBtn) randBtn.onclick = () => {
+      const pool = Array.from({length: 49}, (_, i) => i + 1);
+      const pick = [];
+      while (pick.length < 6) {
+        const i = Math.floor(Math.random() * pool.length);
+        pick.push(pool.splice(i, 1)[0]);
+      }
+      pick.sort((a,b)=>a-b);
+      const sz = Math.floor(Math.random() * 10);
+      $("rand-box").style.display = "block";
+      $("rand-box").innerHTML = `<h3>Zufalls-Tipp · jede Lottozahl gleich wahrscheinlich</h3>
+        <div class="tip-row">${pick.map(n => `<span class="ball">${n}</span>`).join("")}<span class="sz-draw">${sz}</span></div>
+        <p class="fair">Würfel, kein Muster. Superzahl ${sz}.</p>`;
+    };
+    document.querySelectorAll(".card-head").forEach(el => {
+      el.onclick = () => {
+        const key = el.dataset.toggle;
+        look[key] = look[key] === "liste" ? "grafik" : "liste";
+        syncView();
+      };
+    });
+
+    let swipe = null;
+    document.addEventListener("touchstart", (e) => {
+      if (e.touches.length !== 1) return;
+      if (e.target.closest("select, button, a, input")) return;
+      const t = e.changedTouches[0];
+      swipe = { x: t.clientX, y: t.clientY, at: Date.now() };
+    }, { passive: true });
+    document.addEventListener("touchend", (e) => {
+      if (!swipe) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - swipe.x;
+      const dy = t.clientY - swipe.y;
+      const dt = Date.now() - swipe.at;
+      swipe = null;
+      if (dt > 750 || Math.abs(dx) < 56) return;
+      if (Math.abs(dx) < Math.abs(dy) * 1.25) return;
+      step(dx < 0 ? 1 : -1);
+    }, { passive: true });
+
+    async function boot() {
+      let text = FALLBACK;
+      let source = "Beispieldaten August/September 2026";
+      try {
+        const res = await fetch(CSV_URL);
+        if (res.ok) {
+          text = await res.text();
+          source = "Archiv seit 1955 (live)";
+        }
+      } catch (e) {}
+      draws = parseCsv(text);
+      years = [...new Set(draws.map(d => d.y))].sort((a,b)=>a-b);
+      const last = draws[draws.length - 1];
+      year = last.y;
+      month = last.m;
+      $("status").textContent = draws.length + " Ziehungen geladen · " + source + " · letzte: " + fmt(last.date) + last.y;
+      syncView();
+      tickCountdown();
+      setInterval(tickCountdown, 30000);
+    }
+    boot();
+  </script>
+</body>
+</html>
