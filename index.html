@@ -9,10 +9,10 @@
 <p id="boot" style="padding:24px">Lade Wetterkarte …</p>
 <script>
 (async () => {
-  const base = "https://cdn.jsdelivr.net/gh/HuckMedia/lotto-wetterkarte@main/";
+  const base = "https://raw.githubusercontent.com/HuckMedia/lotto-wetterkarte/main/";
   const parts = await Promise.all([
-    fetch(base + "pack1.b64"),
-    fetch(base + "pack2.b64")
+    fetch(base + "pack1.b64?v=schein"),
+    fetch(base + "pack2.b64?v=schein")
   ]);
   for (const r of parts) {
     if (!r.ok) throw new Error(r.url + " " + r.status);
