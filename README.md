@@ -1,7 +1,9 @@
 # Rudi's Lotto Wetterkarte
 
-Öffentliche Ansicht: nach GitHub Pages auf `main` / root
+Vater-Link nach dem Einschalten von Pages:
 https://huckmedia.github.io/lotto-wetterkarte/
 
-Die App-Datei heißt aktuell noch `Index.html.html` (Upload vom iPhone). Einstieg ist `index.html`.
-Updates kommen aus dem Grok-Chat und sollen nach `index.html`.
+Pages einmal aktivieren:
+https://github.com/HuckMedia/lotto-wetterkarte/settings/pages
+Quelle: Deploy from a branch → main → / (root)
+oder Source: GitHub Actions.
