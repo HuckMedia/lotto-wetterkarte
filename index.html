@@ -1,13 +1,27 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Rudi's Lotto Wetterkarte</title>
-  <meta http-equiv="refresh" content="0; url=./Index.html.html">
-  <script>location.replace("./Index.html.html");</script>
 </head>
-<body style="font-family:system-ui;background:#0b1020;color:#eef2ff;padding:24px">
-  <p><a href="./Index.html.html" style="color:#e8c36a">Zur Wetterkarte</a></p>
+<body style="margin:0;background:#0b1020;color:#eef2ff;font-family:system-ui">
+<p id="boot" style="padding:24px">Lade Wetterkarte …</p>
+<script>
+const PACK = "PLACEHOLDER";
+(async () => {
+  const bin = Uint8Array.from(atob(PACK), c => c.charCodeAt(0));
+  const ds = new DecompressionStream("deflate-raw");
+  const writer = ds.writable.getWriter();
+  writer.write(bin);
+  writer.close();
+  const html = await new Response(ds.readable).text();
+  document.open();
+  document.write(html);
+  document.close();
+})().catch(err => {
+  document.getElementById("boot").textContent = "Konnte die Karte nicht entpacken: " + err;
+});
+</script>
 </body>
 </html>
